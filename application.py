@@ -18,7 +18,7 @@ pd.options.display.max_columns = None
 
 e_config = {
     'orgID': 2,
-    'growID': 2,
+    'growID': 2
 }
 def connect_to_cult_RDS():
     conn = pymysql.connect(
@@ -267,28 +267,28 @@ application.layout = html.Div(children=[
                                     'column_id': str(c),
                                     'filter_query': '{{{0}}} > 10 && {{{0}}} < 400'.format(c)
                                 },
-                                'backgroundColor': 'green'
+                                'backgroundColor': '#8ff765'
                             } for c in list(spore_table.columns)[1:]] +
                             [{
                                 'if': {
                                     'column_id': str(c),
                                     'filter_query': '{{{0}}} > 399 && {{{0}}} <1000'.format(c)
                                 },
-                                'backgroundColor': 'yellow'
+                                'backgroundColor': '#f5f376'
                             } for c in list(spore_table.columns)[1:]] +
                             [{
                                 'if': {
                                     'column_id': str(c),
                                     'filter_query': '{{{0}}} > 999 && {{{0}}} <1999'.format(c)
                                 },
-                                'backgroundColor': 'orange'
+                                'backgroundColor': '#f5b649'
                             } for c in list(spore_table.columns)[1:]] +
                             [{
                                 'if': {
                                     'column_id': str(c),
                                     'filter_query': '{{{0}}} > 2000'.format(c)
                                 },
-                                'backgroundColor': 'red'
+                                'backgroundColor': '#e0584f'
                             } for c in list(spore_table.columns)[1:]]
                         ),
                         style_data = {
@@ -301,7 +301,9 @@ application.layout = html.Div(children=[
                             'border':'2px solid grey',
                         },
                         sort_action='native',
-                        filter_action='native'
+                        filter_action='native',
+                        fixed_columns={'headers': True, 'data':1},
+                        fixed_rows={'headers': True, 'data':0}
                     )
                 ], className='dt-container')
             ], className='tab-root')
@@ -312,69 +314,28 @@ application.layout = html.Div(children=[
 ], className='container')
 
 
-#make line chart responsive to the inputs
-@application.callback(
-    Output('rooms', 'figure'),
-    [Input('rooms-dropdown', 'value'),
-     Input('rooms-radios', 'value'),
-     Input('date-picker', 'start_date'),
-     Input('date-picker', 'end_date')]
-)
-def linegraph(room, radio, sdate, edate):
-    sdate = datetime.strptime(sdate, '%Y-%m-%d').date()
-    edate = datetime.strptime(edate, '%Y-%m-%d').date()
-    t1 = get_traces(sdate, edate, room, radio)
-    lin = update_linegraph(go.Figure(), t1, room)
-    return lin
-
-
-#make boxplot responsive to inputs
-@application.callback(
-    Output('boxplot', 'figure'),
-    [Input('rooms-dropdown', 'value'),
-     Input('rooms-radios', 'value'),
-     Input('date-picker', 'start_date'),
-     Input('date-picker', 'end_date')]
-)
-def boxplot(room, radio, sdate, edate):
-    sdate = datetime.strptime(sdate, '%Y-%m-%d').date()
-    edate = datetime.strptime(edate, '%Y-%m-%d').date()
-    t2 = get_traces(sdate, edate, room, radio)
-    boxfig = update_boxplot(go.Figure(), t2, room)
-    return boxfig
-
-
-
-#make pie chart responsive to inputs
-@application.callback(
-    Output('piechart', 'figure'),
-    [Input('rooms-dropdown', 'value'),
-     Input('rooms-radios', 'value'),
-     Input('date-picker', 'start_date'),
-     Input('date-picker', 'end_date')]
-)
-def piechart(room, radio, sdate, edate):
-    sdate = datetime.strptime(sdate, '%Y-%m-%d').date()
-    edate = datetime.strptime(edate, '%Y-%m-%d').date()
-    t3 = get_traces(sdate, edate, room, radio)
-    pie = update_piefig(go.Figure(), t3, room)
-    return pie
 
 
 #update table
 @application.callback(
     [Output('spore-table', 'data'),
      Output('spore-table', 'columns'),
-     Output('spore-table', 'style_data_conditional')],
+     Output('spore-table', 'style_data_conditional'),
+     Output('rooms', 'figure'),
+     Output('boxplot', 'figure'),
+     Output('piechart', 'figure')],
     [Input('rooms-dropdown', 'value'),
      Input('rooms-radios', 'value'),
      Input('date-picker', 'start_date'),
      Input('date-picker', 'end_date')]
 )
-def table(room ,radio, sdate, edate):
+def update(room ,radio, sdate, edate):
     sdate = datetime.strptime(sdate, '%Y-%m-%d').date()
     edate = datetime.strptime(edate, '%Y-%m-%d').date()
     t4 = get_traces(sdate, edate, room, radio)
+    lin = update_linegraph(go.Figure(), t4, room)
+    boxfig = update_boxplot(go.Figure(), t4, room)
+    pie = update_piefig(go.Figure(), t4, room)
     sporetable = get_spores_table(t4, spores)
     return sporetable.to_dict('records'), [{'id':'Spore Name', 'name':'Spore Name', 'type':'text'}]+[{'id':c, 'name':c, 'type':'numeric'} for c in list(sporetable.columns)[1:]], \
     ([{
@@ -382,30 +343,30 @@ def table(room ,radio, sdate, edate):
             'column_id': str(c),
             'filter_query': '{{{0}}} > 10 && {{{0}}} < 400'.format(c)
         },
-        'backgroundColor': 'green'
+        'backgroundColor': '#8ff765'
     } for c in list(sporetable.columns)[1:]] +
      [{
          'if': {
              'column_id': str(c),
              'filter_query': '{{{0}}} > 399 && {{{0}}} <1000'.format(c)
          },
-         'backgroundColor': 'yellow'
+         'backgroundColor': '#f5f376'
      } for c in list(sporetable.columns)[1:]] +
      [{
          'if': {
              'column_id': str(c),
              'filter_query': '{{{0}}} > 999 && {{{0}}} <1999'.format(c)
          },
-         'backgroundColor': 'orange'
+         'backgroundColor': '#f5b649'
      } for c in list(sporetable.columns)[1:]] +
      [{
          'if': {
              'column_id': str(c),
              'filter_query': '{{{0}}} > 2000'.format(c)
          },
-         'backgroundColor': 'red'
+         'backgroundColor': '#e0584f'
      } for c in list(sporetable.columns)[1:]]
-     )
+     ), lin, boxfig, pie
 
 
 if __name__ == '__main__':
